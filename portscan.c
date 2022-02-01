@@ -1,5 +1,5 @@
 /*
-* Port scan projetado conforme vídeo no youtube
+* Port scan created based on youtube video
 * https://youtu.be/4Q0jH1zjvfc
 * Code by: Klayton Facre - 29 JAN 2022
 */
@@ -14,14 +14,24 @@
 #include <string.h>
 #include <stdlib.h>
 
-int main(int argc, char const *argv[]) {
-  if(argc != 2)
+//Auxiliary functions 
+
+int check_usage(void)
+{
+   if(argc != 2)
   {
     printf("pscan will automatically scan the first 1024 ports.\n");
     printf("Usage: pscan <host>\n");
+    printf("No options allowed!!!\n");
     return -1;
   }
+}
 
+// End of Auxiliary functions
+
+int main(int argc, char const *argv[]) {
+  check_usage();
+ 
   struct sockaddr_in remote;          // Struct to hold an IPv4 address + port
   struct hostent *host;               // To hold an Hostname info and resolve it to IPv4
 
