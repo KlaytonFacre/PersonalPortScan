@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-//Auxiliary functions 
+//Auxiliary functions
 int check_usage(int * argc);
 
 // End of Auxiliary functions
@@ -56,7 +56,7 @@ int main(int argc, char const *argv[]) {
       printf("[Port %d open]\n", index);
       ++open_ports_count;
     }
-    
+
     close(sfd);
     sfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sfd < 0)
