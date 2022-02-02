@@ -15,23 +15,14 @@
 #include <stdlib.h>
 
 //Auxiliary functions 
-
-int check_usage(void)
-{
-   if(argc != 2)
-  {
-    printf("pscan will automatically scan the first 1024 ports.\n");
-    printf("Usage: pscan <host>\n");
-    printf("No options allowed!!!\n");
-    return -1;
-  }
-}
+int check_usage(int * argc);
 
 // End of Auxiliary functions
 
 int main(int argc, char const *argv[]) {
-  check_usage();
- 
+  check_usage(&argc);
+
+  int open_ports_count = 0;
   struct sockaddr_in remote;          // Struct to hold an IPv4 address + port
   struct hostent *host;               // To hold an Hostname info and resolve it to IPv4
 
@@ -54,18 +45,18 @@ int main(int argc, char const *argv[]) {
   }
   remote.sin_addr.s_addr = *(unsigned long *) host->h_addr;
 
+  printf("\nSCANNING...\n");
+
   for(int index = 1; index < 1024; ++index)
   {
     remote.sin_port = htons(index);
     int ret = connect(sfd, (struct sockaddr *) &remote, sizeof(struct sockaddr_in));
-    if(ret < 0)
+    if(ret == 0)
     {
-      perror("connect: ");
+      printf("[Port %d open]\n", index);
+      ++open_ports_count;
     }
-    else
-    {
-      printf("Port %d open\n", index);
-    }
+    
     close(sfd);
     sfd = socket(AF_INET, SOCK_STREAM, 0);
     if(sfd < 0)
@@ -75,5 +66,17 @@ int main(int argc, char const *argv[]) {
     }
   }
 
+  printf("\nResults: %d ports open on host.\n", open_ports_count);
   return 0;
+}
+
+int check_usage(int * argc)
+{
+   if(*argc != 2)
+  {
+    printf("pscan will automatically scan the first 1024 ports.\n");
+    printf("Usage: pscan <host>\n");
+    printf("No options allowed! Ignoring options typed\n");
+    return 0;
+  }
 }
