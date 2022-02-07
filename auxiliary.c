@@ -1,14 +1,14 @@
-#ifndef
-#define auxiliary.h
-#endif
+#include <stdio.h>
 
-export int check_usage(int * argument)
+int check_usage(int * argument)
 {
    if(*argument != 2)
   {
     printf("pscan will automatically scan the first 1024 ports.\n");
     printf("Usage: pscan <host>\n");
     printf("No options allowed! Ignoring options typed\n");
-    return 0;
+    return -1;
+  } else {
+      return 0;
   }
 }
