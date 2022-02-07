@@ -1,6 +1,6 @@
 #ifndef AUXILIARY
 #define AUXILIARY
 
-extern int check_usage(int * argument);
+extern int print_usage(void);
 
 #endif

@@ -25,5 +25,8 @@
     "**/.*/**",
     "**/.vscode",
     "**/.vscode/**"
-  ]
+  ],
+  "files.associations": {
+    "auxiliary.h": "c"
+  }
 }

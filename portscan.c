@@ -13,43 +13,47 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
-#include "auxiliary.h"                                        // To house auxiliary functions written
+#include "auxiliary.h" // To house auxiliary functions written
 
 int main(int argc, char const *argv[])
 {
-  int low_port_range;                                         // In case of use a port range to scan
-  int upper_port_range;                                       // In case of use a port range to scan
+  int open_ports_count = 0;
+  int low_port_range;   // In case of use a port range to scan
+  int upper_port_range; // In case of use a port range to scan
 
-  int usage = check_usage(&argc);                             // check for pscan <host> <low_port> <upper_port>
-  switch (usage)
+  // check for pscan <host> <low_port> <upper_port>
+  switch (argc)
   {
-  case 0:                                                     // In case of pscan <target>
+  case 2: // In case of pscan <target>, set the default port range
     low_port_range = 1;
     upper_port_range = 1024;
     break;
-  case 1:                                                     // In case of pscan <target> [low_range] [upper_range]
+  case 4: // In case of pscan <target> [low_range] [upper_range]
     low_port_range = atoi(argv[2]);
     upper_port_range = atoi(argv[3]);
     break;
   default:
+    print_usage();
     exit(-1);
   }
 
-  int open_ports_count = 0;
-  struct sockaddr_in target;                                  // Struct to hold an IPv4 address + port defined in in.h
-  struct hostent *name;                                       // To hold an Hostname info and resolve it to IPv4
-
-  int stream_socket = socket(AF_INET, SOCK_STREAM, 0);        // Create a socket for TCP/IP 4 connection
-  if (stream_socket == -1)
-  {
-    perror("socket: ");
-    return -1;
-  }
-
-  memset(&target, sizeof(target), 0);                         // To zero out the struct target, to ensure there is only zeroes on that memory position
+  struct sockaddr_in target;          // Struct to hold an IPv4 address + port defined in in.h
+  memset(&target, sizeof(target), 0); // To zero out the struct target, to ensure there is only zeroes on that memory position
   target.sin_family = AF_INET;
 
+  if(isdigit(argv[1]))
+    {
+      inet_aton(argv[1], &target.sin_addr);     
+    }
+    else
+    {
+        perror("Hostname: ");
+        exit(2);
+    }
+  /*
+  struct hostent *name;                                       // To hold an Hostname info and resolve it to IPv4
   name = gethostbyname(argv[1]);                              // Resolve an domain name to IPv4
   if (name == NULL)
   {
@@ -57,30 +61,33 @@ int main(int argc, char const *argv[])
     return -1;
   }
   target.sin_addr.s_addr = *(unsigned long *)name->h_addr;
+  */
 
   printf("\nSCANNING...\n");
 
-  for (int index = low_port_range; index < upper_port_range; ++index)
+  for (int index = low_port_range; index <= upper_port_range; ++index) // Actual scanning start
   {
-    target.sin_port = htons(index);
-    int ret = connect(stream_socket, (struct sockaddr *)&target, sizeof(struct sockaddr_in));
-    if (ret == 0)
-    {
-      printf("[Port %d open]\n", index);
-      ++open_ports_count;
-    }
-    else
-    {
-      printf("[Port %d is closed]\n", index);
-    }
+    target.sin_port = htons(index);                      // Set the port that is gonna be scanned right now
 
-    close(stream_socket);
-    stream_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (stream_socket < 0)
+    int stream_socket = socket(AF_INET, SOCK_STREAM, 0); // Create a socket for TCP/IP 4 connection
+    if (stream_socket == -1)                             // Check for socket erros on the socket() call above
     {
       perror("socket: ");
       return -1;
     }
+
+    int result = connect(stream_socket, (struct sockaddr *)&target, sizeof(struct sockaddr_in));
+    if (result == 0)
+    {
+      printf("[Port %d: Open]\n", index);
+      ++open_ports_count;
+    }
+    else
+    {
+      printf("[Port %d: Closed]\n", index);
+    }
+
+    close(stream_socket);
   }
 
   printf("\nResults: %d port(s) open on host.\n", open_ports_count);
