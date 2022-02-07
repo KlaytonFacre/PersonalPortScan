@@ -14,10 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-//Auxiliary functions
-int check_usage(int * argc);
-
-// End of Auxiliary functions
+#include <auxiliary.h>    // To house auxiliary functions written
 
 int main(int argc, char const *argv[]) {
   check_usage(&argc);
@@ -68,15 +65,4 @@ int main(int argc, char const *argv[]) {
 
   printf("\nResults: %d ports open on host.\n", open_ports_count);
   return 0;
-}
-
-int check_usage(int * argc)
-{
-   if(*argc != 2)
-  {
-    printf("pscan will automatically scan the first 1024 ports.\n");
-    printf("Usage: pscan <host>\n");
-    printf("No options allowed! Ignoring options typed\n");
-    return 0;
-  }
 }
