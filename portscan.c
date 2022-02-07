@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <auxiliary.h>    // To house auxiliary functions written
+#include "auxiliary.h"    // To house auxiliary functions written
 
 int main(int argc, char const *argv[]) {
   check_usage(&argc);

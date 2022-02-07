@@ -1,6 +1,7 @@
 #include <stdio.h>
+#include "auxiliary.h"
 
-int check_usage(int * argument)
+extern int check_usage(int * argument)
 {
    if(*argument != 2)
   {
