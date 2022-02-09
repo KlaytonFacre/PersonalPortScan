@@ -33,6 +33,7 @@ int main(int argc, char const *argv[])
   request.ai_socktype = SOCK_STREAM;
 
   struct addrinfo *response;
+  char ipstr[INET6_ADDRSTRLEN];
 
   // check for pscan <host> <low_port> <upper_port>
   switch (argc)
@@ -46,7 +47,9 @@ int main(int argc, char const *argv[])
     }
     else if (getaddrinfo(argv[1], NULL, &request, &response) == 0)
     {
-      target.sin_addr = (struct in_addr)response->ai_addr;
+      inet_ntop(AF_INET, response[0].ai_addr, ipstr, sizeof(ipstr));
+      inet_aton(ipstr, &target.sin_addr);
+      printf("%s\n", ipstr);
       freeaddrinfo(response);
     }
     else
@@ -101,6 +104,6 @@ int main(int argc, char const *argv[])
     close(stream_socket);
   }
 
-  printf("\nResults: %d port(s) open on target %s(%s).\n", open_ports_count, argv[1], *response[0].ai_addr->sa_data);
+  printf("\nResults: %d port(s) open on target %s(%s).\n", open_ports_count, argv[1], ipstr);
   return 0;
 }
