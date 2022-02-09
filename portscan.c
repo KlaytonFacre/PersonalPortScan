@@ -35,45 +35,46 @@ int main(int argc, char const *argv[])
   struct addrinfo *response;
   char ipstr[INET6_ADDRSTRLEN];
 
-  // check for pscan <host> <low_port> <upper_port>
+  // Lets set the corret range depending of the command line arguments
   switch (argc)
   {
   case 2: // In case of pscan <target>, set the default port range
     low_port_range = 1;
     upper_port_range = 1024;
-    if (isdigit(*argv[1]))
-    {
-      inet_aton(argv[1], &target.sin_addr);
-    }
-    else if (getaddrinfo(argv[1], NULL, &request, &response) == 0)
-    {
-      inet_ntop(AF_INET, response[0].ai_addr, ipstr, sizeof(ipstr));
-      inet_aton(ipstr, &target.sin_addr);
-      printf("%s\n", ipstr);
-      freeaddrinfo(response);
-    }
-    else
-    {
-      perror("Target: ");
-      exit(2);
-    }
     break;
   case 4: // In case of pscan <target> [low_range] [upper_range], set the apropriate range
-    low_port_range = atoi(argv[2]);
-    upper_port_range = atoi(argv[3]);
-    if (isdigit(*argv[1]))
+    if (isdigit(*argv[2]) && isdigit(*argv[3]))
     {
-      inet_aton(argv[1], &target.sin_addr);
+      low_port_range = atoi(argv[2]);
+      upper_port_range = atoi(argv[3]);
     }
     else
     {
-      perror("Target: ");
-      exit(2);
+      print_usage();
+      exit(1);
     }
     break;
   default:
     print_usage();
     exit(1);
+  }
+
+  // Lets set the target, depending its an IP or a Domain Name
+  if (isdigit(*argv[1])) // If its an IP address
+  {
+    inet_aton(argv[1], &target.sin_addr);
+  }
+  else if (getaddrinfo(argv[1], NULL, &request, &response) == 0) // If its an Domain Name
+  {
+    inet_ntop(AF_INET, response[0].ai_addr, ipstr, sizeof(ipstr));
+    inet_aton(ipstr, &target.sin_addr);
+    printf("%s\n", ipstr);
+    freeaddrinfo(response);
+  }
+  else // If its none of the above
+  {
+    perror("Target: ");
+    exit(2);
   }
 
   /* Here the scan starts */
@@ -104,6 +105,6 @@ int main(int argc, char const *argv[])
     close(stream_socket);
   }
 
-  printf("\nResults: %d port(s) open on target %s(%s).\n", open_ports_count, argv[1], ipstr);
+  printf("\nResults: %d port(s) open on target %s [%s].\n", open_ports_count, argv[1], ipstr);
   return 0;
 }
