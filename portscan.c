@@ -32,7 +32,7 @@ int main(int argc, char const *argv[])
   case 2: // In case of pscan <target>, set the default port range
     low_port_range = 1;
     upper_port_range = 1024;
-    if (isdigit(argv[1]))
+    if (isdigit(*argv[1]))
     {
       inet_aton(argv[1], &target.sin_addr);
     }
@@ -45,7 +45,7 @@ int main(int argc, char const *argv[])
   case 4: // In case of pscan <target> [low_range] [upper_range]
     low_port_range = atoi(argv[2]);
     upper_port_range = atoi(argv[3]);
-    if(isdigit(argv[1]))
+    if(isdigit(*argv[1]))
     {
       inet_aton(argv[1], &target.sin_addr);
     }
@@ -60,17 +60,7 @@ int main(int argc, char const *argv[])
     exit(1);
   }
 
-  /*
-  struct hostent *name;                                       // To hold an Hostname info and resolve it to IPv4
-  name = gethostbyname(argv[1]);                              // Resolve an domain name to IPv4
-  if (name == NULL)
-  {
-    perror("Get host by name: ");
-    return -1;
-  }
-  target.sin_addr.s_addr = *(unsigned long *)name->h_addr;
-  */
-
+  /* Here the scan starts */
   printf("\nSCANNING...\n");
 
   for (int index = low_port_range; index <= upper_port_range; ++index) // Actual scanning start
@@ -98,6 +88,6 @@ int main(int argc, char const *argv[])
     close(stream_socket);
   }
 
-  printf("\nResults: %d port(s) open on host.\n", open_ports_count);
+  printf("\nResults: %d port(s) open on target.\n", open_ports_count);
   return 0;
 }
