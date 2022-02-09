@@ -20,11 +20,19 @@
 int main(int argc, char const *argv[])
 {
   int open_ports_count = 0;
-  int low_port_range;                 // In case of use a port range to scan
-  int upper_port_range;               // In case of use a port range to scan
+  int low_port_range;   // In case of use a port range to scan
+  int upper_port_range; // In case of use a port range to scan
+
   struct sockaddr_in target;          // Struct to hold an IPv4 address + port defined in in.h
   memset(&target, sizeof(target), 0); // To zero out the struct target, to ensure there is only zeroes on that memory position
   target.sin_family = AF_INET;
+
+  struct addrinfo request;
+  memset(&request, sizeof(request), 0);
+  request.ai_family = AF_INET;
+  request.ai_socktype = SOCK_STREAM;
+
+  struct addrinfo *response;
 
   // check for pscan <host> <low_port> <upper_port>
   switch (argc)
@@ -36,16 +44,21 @@ int main(int argc, char const *argv[])
     {
       inet_aton(argv[1], &target.sin_addr);
     }
+    else if (getaddrinfo(argv[1], NULL, &request, &response) == 0)
+    {
+      target.sin_addr = (struct in_addr)response->ai_addr;
+      freeaddrinfo(response);
+    }
     else
     {
       perror("Target: ");
       exit(2);
     }
     break;
-  case 4: // In case of pscan <target> [low_range] [upper_range]
+  case 4: // In case of pscan <target> [low_range] [upper_range], set the apropriate range
     low_port_range = atoi(argv[2]);
     upper_port_range = atoi(argv[3]);
-    if(isdigit(*argv[1]))
+    if (isdigit(*argv[1]))
     {
       inet_aton(argv[1], &target.sin_addr);
     }
@@ -88,6 +101,6 @@ int main(int argc, char const *argv[])
     close(stream_socket);
   }
 
-  printf("\nResults: %d port(s) open on target.\n", open_ports_count);
+  printf("\nResults: %d port(s) open on target %s(%s).\n", open_ports_count, argv[1], *response[0].ai_addr->sa_data);
   return 0;
 }
