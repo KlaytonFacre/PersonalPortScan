@@ -62,13 +62,12 @@ int main(int argc, char const *argv[])
   // Lets set the target, depending its an IP or a Domain Name
   if (isdigit(*argv[1])) // If its an IP address
   {
-    inet_aton(argv[1], &target.sin_addr);
+    target.sin_addr.s_addr = inet_addr(argv[1]);
   }
-  else if (getaddrinfo(argv[1], NULL, &request, &response) == 0) // If its an Domain Name
+  else if (isalpha(*argv[1])) // If its an Domain Name
   {
-    inet_ntop(AF_INET, response[0].ai_addr, ipstr, sizeof(ipstr));
-    inet_aton(ipstr, &target.sin_addr);
-    printf("%s\n", ipstr);
+    target.sin_addr.s_addr = (unsigned int)inet_addr(response->ai_addr->sa_data);
+    printf("%s\n", target.sin_addr.s_addr);
     freeaddrinfo(response);
   }
   else // If its none of the above
@@ -82,7 +81,7 @@ int main(int argc, char const *argv[])
 
   for (int index = low_port_range; index <= upper_port_range; ++index) // Actual scanning start
   {
-    target.sin_port = htons(index); // Set the port that is gonna be scanned right now
+    target.sin_port = htons(index); // Set the port that is gonna be scanned right now in the correct byte order for this host
 
     int stream_socket = socket(AF_INET, SOCK_STREAM, 0); // Create a socket for TCP/IP 4 connection
     if (stream_socket == -1)                             // Check for socket erros on the socket() call above
@@ -91,8 +90,8 @@ int main(int argc, char const *argv[])
       return -1;
     }
 
-    int result = connect(stream_socket, (struct sockaddr *)&target, sizeof(struct sockaddr_in));
-    if (result == 0)
+    int conn_status = connect(stream_socket, (struct sockaddr *)&target, sizeof(struct sockaddr_in));
+    if (conn_status == 0)
     {
       printf("[Port %d: Open]\n", index);
       ++open_ports_count;
@@ -105,6 +104,6 @@ int main(int argc, char const *argv[])
     close(stream_socket);
   }
 
-  printf("\nResults: %d port(s) open on target %s [%s].\n", open_ports_count, argv[1], ipstr);
+  printf("\nResults: %d port(s) open on target %s\n", open_ports_count, inet_ntoa(target.sin_addr));
   return 0;
 }
