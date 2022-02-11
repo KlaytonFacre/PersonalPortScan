@@ -66,9 +66,8 @@ int main(int argc, char const *argv[])
   }
   else if (isalpha(*argv[1])) // If its an Domain Name
   {
-    target.sin_addr.s_addr = (unsigned int)inet_addr(response->ai_addr->sa_data);
-    printf("%s\n", target.sin_addr.s_addr);
-    freeaddrinfo(response);
+    printf("Domain name resolution not implemented yet.\n");
+    exit(2);
   }
   else // If its none of the above
   {
