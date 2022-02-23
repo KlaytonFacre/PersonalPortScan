@@ -15,78 +15,109 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-#include "auxiliary.h" // To hold auxiliary functions written
+/*** GLOBALS ***/
+int open_ports_count = 0;
+int low_port_range = 1;
+int upper_port_range = 1024;
+FILE *scan_result = NULL;
 
-int main(int argc, char const *argv[])
+struct sockaddr_in target;          // Struct to hold an IPv4 address + port defined in in.h
+memset(&target, sizeof(target), 0); // To zero out the struct target, to ensure there is only zeroes on that memory position
+target.sin_family = AF_INET;
+
+struct addrinfo request;
+memset(&request, sizeof(request), 0);
+request.ai_family = AF_INET;
+request.ai_socktype = SOCK_STREAM;
+
+struct addrinfo *response;
+
+/*** FUNTIONS ***/
+void initialize_options(int *num_arg, char **vec_args)
 {
-  int open_ports_count = 0;
-  int low_port_range;
-  int upper_port_range;
-
-  struct sockaddr_in target;          // Struct to hold an IPv4 address + port defined in in.h
-  memset(&target, sizeof(target), 0); // To zero out the struct target, to ensure there is only zeroes on that memory position
-  target.sin_family = AF_INET;
-
-  struct addrinfo request;
-  memset(&request, sizeof(request), 0);
-  request.ai_family = AF_INET;
-  request.ai_socktype = SOCK_STREAM;
-
-  struct addrinfo *response;
-
-  // Lets set the corret range depending of the command line arguments
-  switch (argc)
+  for (int opt_index = 1; opt_index < argc; ++opt_index)
   {
-  case 2: // In case of pscan <target>, set the default port range
-    low_port_range = 1;
-    upper_port_range = 1024;
-    break;
-  case 4: // In case of pscan <target> [low_range] [upper_range], set the apropriate range
-    if (isdigit(*argv[2]) && isdigit(*argv[3]))
+    if (strcmp(argv[opt_index], "-r") == 0) // Lets set the scan range
     {
-      low_port_range = atoi(argv[2]);
-      upper_port_range = atoi(argv[3]);
+      low_port_range = atoi(argv[++opt_index]);
+      upper_port_range = atoi(argv[++opt_index]);
+    }
+    else if (strcmp(argv[opt_index], "-t") == 0) // Lets set the target, depending its an IP or a Domain Name
+    {
+      if (isdigit(*argv[opt_index + 1])) // If its an IP address
+      {
+        int conv_status = inet_aton(argv[++opt_index], &target.sin_addr);
+        if (conv_status == 0)
+        {
+          printf("Invalid IP address. Aborting.\n");
+          exit(EXIT_FAILURE);
+        }
+      }
+      else if (isalpha(*argv[opt_index + 1])) // If its an Domain Name
+      {
+        int dn_resolve_status = getaddrinfo(argv[++opt_index], NULL, &request, &response);
+        if (dn_resolve_status != 0)
+        {
+          struct sockaddr_in *temp_sock = (struct sockaddr_in *)response->ai_addr;
+          printf("Domain name resolution failed. [%s]\n", inet_ntoa(temp_sock->sin_addr));
+          exit(EXIT_FAILURE);
+        }
+
+        struct sockaddr_in *temp_sock = (struct sockaddr_in *)response->ai_addr;
+        target.sin_addr = temp_sock->sin_addr;
+        freeaddrinfo(response);
+      }
+      else // If its none of the above
+      {
+        perror("Target: ");
+        exit(EXIT_FAILURE);
+      }
+    }
+    else if (strcmp(argv[opt_index], "-w") == 0) // Lets set the file with the result of the scan
+    {
+      scan_result = fopen(argv[++opt_index], "w");
+      if (scan_result == NULL)
+      {
+        printf("\nError creating the file. Aborting.");
+        exit(EXIT_FAILURE);
+      }
     }
     else
     {
-      printf("Invalid port range. Aborting. \n");
+      printf("\nUnrecognized option. Aborting.\n");
       print_usage();
       exit(EXIT_FAILURE);
     }
-    break;
-  default:
+  }
+}
+
+int print_usage(void)
+{
+  printf("Personal portscan (Klayton Facre - 2022)\n\n");
+  printf("Usage: pscan [-rwt] <target>\n");
+  printf(" -r: Set the port range <lower> <upper> for the scan (optional).\n");
+  printf(" -w: Set the file name <file name> to write the result (optional)\n");
+  printf(" -t: Set the target of the scan (must have)\n\n");
+  printf("pscan will automatically scan the first 1024 ports if not told otherwise.\n");
+
+  return 0;
+}
+
+int main(int argc, char const *argv[])
+{
+  initialize_options(&argc, argv);
+
+  // Lets check for the target (if its missing)
+  if (target.sin_addr.s_addr == 0)
+  {
+    printf("\nMissing target information. Aborting.\n");
     print_usage();
     exit(EXIT_FAILURE);
   }
-
-  // Lets set the target, depending its an IP or a Domain Name
-  if (isdigit(*argv[1])) // If its an IP address
+  else if (scan_result != NULL)
   {
-    int conv_status = inet_aton(argv[1], &target.sin_addr);
-    if (conv_status == 0)
-    {
-      printf("Invalid IP address. Aborting.\n");
-      exit(EXIT_FAILURE);
-    }
-  }
-  else if (isalpha(*argv[1])) // If its an Domain Name
-  {
-    int dn_resolve_status = getaddrinfo(argv[1], NULL, &request, &response);
-    if (dn_resolve_status != 0)
-    {
-      struct sockaddr_in *temp_sock = (struct sockaddr_in *)response->ai_addr;
-      printf("Domain name resolution failed. [%s]\n", inet_ntoa(temp_sock->sin_addr));
-      exit(EXIT_FAILURE);
-    }
-
-    struct sockaddr_in *temp_sock = (struct sockaddr_in *)response->ai_addr;
-    target.sin_addr = temp_sock->sin_addr;
-    freeaddrinfo(response);
-  }
-  else // If its none of the above
-  {
-    perror("Target: ");
-    exit(EXIT_FAILURE);
+    fprintf(scan_result, "Target: %s\n", inet_ntoa(target.sin_addr));
+    fprintf(scan_result, "OPEN PORTS:\n");
   }
 
   /* Here the scan starts */
@@ -108,6 +139,8 @@ int main(int argc, char const *argv[])
     {
       printf("[Port %d: Open]\n", index);
       ++open_ports_count;
+      if (scan_result != NULL)
+        fprintf(scan_result, "%d\n", index);
     }
     else
     {
