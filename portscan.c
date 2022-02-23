@@ -56,7 +56,7 @@ int main(int argc, char const *argv[])
   }
 
   // Set the target
-  if (isdigit(*argv[0])) // If its an IP address
+  if (isdigit(*argv[optind])) // If its an IP address
   {
     int conv_status = inet_aton(argv[optind], &target.sin_addr);
     if (conv_status == 0)
