@@ -25,6 +25,7 @@ int main(int argc, char const *argv[])
   int open_ports_count = 0;
   int low_port_range = 1;
   int upper_port_range = 1024;
+  int target_index = 1;
   char option;
   FILE *scan_result = NULL;
 
@@ -48,26 +49,29 @@ int main(int argc, char const *argv[])
       scan_result = fopen(optarg, "w");
       if (scan_result == NULL)
       {
-        printf("\nError creating the file. Aborting.");
+        printf("\nError creating the output file. Aborting.");
         exit(EXIT_FAILURE);
       }
       break;
     }
+    target_index = optind;
   }
 
   // Set the target
-  if (isdigit(*argv[optind])) // If its an IP address
+  if (isdigit(*argv[target_index])) // If its an IP address
   {
-    int conv_status = inet_aton(argv[optind], &target.sin_addr);
+    int conv_status = inet_aton(argv[target_index], &target.sin_addr);
     if (conv_status == 0)
     {
       printf("Invalid IP address. Aborting.\n");
       exit(EXIT_FAILURE);
     }
+    if (scan_result != NULL)
+      fprintf(scan_result, "Open port(s) for %s: \n", inet_ntoa(target.sin_addr));
   }
-  else if (isalpha(*argv[optind])) // If its an Domain Name
+  else if (isalpha(*argv[target_index])) // If its an Domain Name
   {
-    int dn_resolve_status = getaddrinfo(argv[optind], NULL, &request, &response);
+    int dn_resolve_status = getaddrinfo(argv[target_index], NULL, &request, &response);
     if (dn_resolve_status != 0)
     {
       struct sockaddr_in *temp_sock = (struct sockaddr_in *)response->ai_addr;
@@ -78,6 +82,9 @@ int main(int argc, char const *argv[])
     struct sockaddr_in *temp_sock = (struct sockaddr_in *)response->ai_addr;
     target.sin_addr = temp_sock->sin_addr;
     freeaddrinfo(response);
+
+    if (scan_result != NULL)
+      fprintf(scan_result, "Open port(s) for %s: \n", inet_ntoa(target.sin_addr));
   }
   else // If its none of the above
   {
