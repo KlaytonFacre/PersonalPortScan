@@ -53,7 +53,12 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
       }
       break;
+    default:
+      print_usage();
+      exit(EXIT_FAILURE);
+      break;
     }
+
     target_index = optind;
   }
 
@@ -67,7 +72,7 @@ int main(int argc, char const *argv[])
       exit(EXIT_FAILURE);
     }
     if (scan_result != NULL)
-      fprintf(scan_result, "Open port(s) for %s: \n", inet_ntoa(target.sin_addr));
+      fprintf(scan_result, "Open port(s) on %s: \n", inet_ntoa(target.sin_addr));
   }
   else if (isalpha(*argv[target_index])) // If its an Domain Name
   {
@@ -75,7 +80,7 @@ int main(int argc, char const *argv[])
     if (dn_resolve_status != 0)
     {
       struct sockaddr_in *temp_sock = (struct sockaddr_in *)response->ai_addr;
-      printf("Domain name resolution failed for [%s]\n", inet_ntoa(temp_sock->sin_addr));
+      printf("Domain name resolution failed on [%s]\n", inet_ntoa(temp_sock->sin_addr));
       exit(EXIT_FAILURE);
     }
 
@@ -128,10 +133,10 @@ int main(int argc, char const *argv[])
 
 int print_usage(void)
 {
-  printf("Personal portscan (Klayton Facre - 2022)\n\n");
-  printf("Usage: pscan [-rw] <target>\n");
-  printf(" -r: Set the port range <lower> <upper> for the scan (optional).\n");
-  printf(" -w: Set the file name <file name> to write the result (optional)\n");
+  printf("Personal portscan (Klayton Facre - 2022)\n");
+  printf("Usage: pscan [-r LOW-UPPER] [-w FILENAME] <target>\n");
+  printf(" -r: Set the port range <lower>-<upper> for the scan (optional).\n");
+  printf(" -w: Set the file name <filename> to write the scan result (optional)\n");
   printf("pscan will automatically scan the first 1024 ports if not told otherwise.\n");
 
   return 0;
